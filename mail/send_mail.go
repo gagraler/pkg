@@ -36,18 +36,11 @@ func (m *Mail) SendMail() {
 
 	d := gomail.NewDialer(m.Host, m.Port, m.User, m.Password)
 	if err := d.DialAndSend(mail); err != nil {
-		log.DPanicf("send email error: %s", err.Error())
+		log.Errorf("send email error: %s", err.Error())
 	}
 
 	if dFlag {
 		log.Debug("sending email...")
-	}
-
-	if err := d.DialAndSend(mail); err != nil {
-		if dFlag {
-			log.Errorf("send email error: %s", err.Error())
-		}
-		return
 	}
 
 	if dFlag {
