@@ -16,6 +16,7 @@ var (
 	sugarLogger *zap.SugaredLogger
 	logger      *zap.Logger
 	once        sync.Once
+	logConfig   *Config
 )
 
 // LogLevel defines the severity of a logger internal.
@@ -64,11 +65,10 @@ func NewLogger() (*zap.SugaredLogger, *zap.Logger, error) {
 		writeSyncer zapcore.WriteSyncer
 		encoder     zapcore.Encoder
 		core        zapcore.Core
-		logConfig   *Config
 	)
 
 	// Load configuration from environment variables or use default values
-	logConfig = loggerConfigParse()
+	logConfig = defaultLoggerConfig()
 
 	encoder = getEncoder(logConfig.Mode)
 
@@ -153,58 +153,18 @@ func customTimeEncoder(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
 	enc.AppendString(t.Format("2006-01-02 15:04:05"))
 }
 
-// loggerConfigParse loads configuration from environment variables or uses default values.
-func loggerConfigParse() *Config {
-	logPath := getEnv("LOG_PATH", "./logs")
-	logMaxSizeStr := getEnv("LOG_MAX_SIZE", "100")
-	logMaxBackupsStr := getEnv("LOG_MAX_BACKUPS", "30")
-	logMaxAgeStr := getEnv("LOG_MAX_AGE", "7")
-	// debug, info, warn, error, fatal
-	logLevelStr := getEnv("LOG_LEVEL", "info")
-	// output, file, kafka
-	output := getEnv("LOG_OUTPUT", "stdout")
-	// dev, prod
-	mode := getEnv("LOG_MODE", "prod")
-	kafkaBrokers := getEnv("KAFKA_BROKERS", "")
-	kafkaTopic := getEnv("KAFKA_TOPIC", "")
-
-	logMaxSize, err := strconv.Atoi(logMaxSizeStr)
-	if err != nil {
-		logMaxSize = 100
-	}
-	logMaxBackups, err := strconv.Atoi(logMaxBackupsStr)
-	if err != nil {
-		logMaxBackups = 30
-	}
-	logMaxAge, err := strconv.Atoi(logMaxAgeStr)
-	if err != nil {
-		logMaxAge = 7
-	}
-
-	var logLevel LogLevel
-	switch strings.ToLower(logLevelStr) {
-	case "info":
-		logLevel = InfoLevel
-	case "debug":
-		logLevel = DebugLevel
-	case "error":
-		logLevel = ErrorLevel
-	case "warn":
-		logLevel = WarnLevel
-	default:
-		logLevel = InfoLevel
-	}
-
+// defaultLoggerConfig loads configuration from environment variables or uses default values.
+func defaultLoggerConfig() *Config {
 	return &Config{
-		LogPath:      logPath,
-		MaxSize:      logMaxSize,
-		MaxBackups:   logMaxBackups,
-		MaxAge:       logMaxAge,
-		LogLevel:     logLevel,
-		Output:       output,
-		Mode:         mode,
-		KafkaBrokers: kafkaBrokers,
-		KafkaTopic:   kafkaTopic,
+		LogPath:      getEnv("LOG_PATH", "./logs"),
+		MaxSize:      getIntEnv("LOG_MAX_SIZE", 100),
+		MaxBackups:   getIntEnv("LOG_MAX_BACKUPS", 30),
+		MaxAge:       getIntEnv("LOG_MAX_AGE", 7),
+		LogLevel:     getLogLevelEnv("LOG_LEVEL", InfoLevel),
+		Output:       getEnv("LOG_OUTPUT", "stdout"),
+		Mode:         getEnv("LOG_MODE", "prod"),
+		KafkaBrokers: getEnv("KAFKA_BROKERS", ""),
+		KafkaTopic:   getEnv("KAFKA_TOPIC", ""),
 	}
 }
 
@@ -215,4 +175,111 @@ func getEnv(key, defaultValue string) string {
 		return defaultValue
 	}
 	return value
+}
+
+// getLogLevelEnv retrieves the value of the environment variable named by the key, converts it to LogLevel, or returns the default value if the variable is not present or invalid.
+func getLogLevelEnv(key string, logLevel LogLevel) LogLevel {
+	valueStr, exists := os.LookupEnv(key)
+	if !exists {
+		return logLevel
+	}
+	switch strings.ToLower(valueStr) {
+	case "debug":
+		return DebugLevel
+	case "info":
+		return InfoLevel
+	case "warn":
+		return WarnLevel
+	case "error":
+		return ErrorLevel
+	case "fatal":
+		return FatalLevel
+	default:
+		return logLevel
+	}
+}
+
+// getIntEnv retrieves the value of the environment variable named by the key, converts it to an integer, or returns the default value if the variable is not present or invalid.
+func getIntEnv(key string, intValue int) int {
+	valueStr, exists := os.LookupEnv(key)
+	if !exists {
+		return intValue
+	}
+	value, err := strconv.Atoi(valueStr)
+	if err != nil {
+		return intValue
+	}
+	return value
+}
+
+// SetLogPath sets the log path.
+func SetLogPath(logPath string) {
+	if logConfig == nil {
+		logConfig = &Config{}
+	}
+	logConfig.LogPath = logPath
+}
+
+// SetMaxSize sets the maximum size of a log file.
+func SetMaxSize(maxSize int) {
+	if logConfig == nil {
+		logConfig = &Config{}
+	}
+	logConfig.MaxSize = maxSize
+}
+
+// SetMaxBackups sets the maximum number of backup log files.
+func SetMaxBackups(maxBackups int) {
+	if logConfig == nil {
+		logConfig = &Config{}
+	}
+	logConfig.MaxBackups = maxBackups
+}
+
+// SetMaxAge sets the maximum age of a log file.
+func SetMaxAge(maxAge int) {
+	if logConfig == nil {
+		logConfig = &Config{}
+	}
+	logConfig.MaxAge = maxAge
+}
+
+// SetLogLevel sets the log level.
+func SetLogLevel(logLevel LogLevel) {
+	if logConfig == nil {
+		logConfig = &Config{}
+	}
+	logConfig.LogLevel = logLevel
+}
+
+// SetOutput sets the log output.
+func SetOutput(output string) {
+	if logConfig == nil {
+		logConfig = &Config{}
+	}
+	logConfig.Output = output
+}
+
+// SetMode sets the log mode.
+func SetMode(mode string) {
+	if logConfig == nil {
+		logConfig = &Config{}
+	}
+	logConfig.Mode = mode
+}
+
+// SetKafkaBrokers sets the Kafka brokers.
+func SetKafkaBrokers(kafkaBrokers string) {
+	if logConfig == nil {
+		logConfig = &Config{}
+	}
+	logConfig.KafkaBrokers = kafkaBrokers
+}
+
+// SetKafkaTopic sets the Kafka topic.
+func SetKafkaTopic(kafkaTopic string) {
+	if logConfig == nil {
+		logConfig = &Config{}
+	}
+	logConfig.KafkaTopic = kafkaTopic
 }
