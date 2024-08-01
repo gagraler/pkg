@@ -13,8 +13,8 @@ import (
 /**
  * @author: gagral.x@gmail.com
  * @time: 2024/7/13 23:00
- * @file: info.go
- * @description:
+ * @file: traceInfo.go
+ * @description: traceInfo http handler
  */
 
 type InfoResp struct {
@@ -23,7 +23,6 @@ type InfoResp struct {
 }
 
 var (
-	tracer      = otel.Tracer("")
 	meter       = otel.Meter("")
 	viewCounter metric.Int64Counter
 	log         = logger.SugaredLogger()
@@ -39,9 +38,12 @@ func init() {
 	}
 }
 
-// info
-func info(c *gin.Context, tracerName string) {
-	ctx, span := tracer.Start(c.Request.Context(), "info")
+// traceInfo 处理 /traceInfo 路由
+func traceInfo(c *gin.Context, tracerName string) {
+
+	tracer := otel.Tracer(tracerName)
+
+	ctx, span := tracer.Start(c.Request.Context(), "traceInfo")
 	defer span.End()
 
 	viewCounter.Add(ctx, 1)
@@ -55,7 +57,7 @@ func info(c *gin.Context, tracerName string) {
 	}
 }
 
-// NewPropagator
+// NewPropagator 创建新的传播器
 func NewPropagator() propagation.TextMapPropagator {
 	return propagation.NewCompositeTextMapPropagator(
 		propagation.TraceContext{},

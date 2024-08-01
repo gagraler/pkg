@@ -12,7 +12,7 @@ import (
  * @author: gagral.x@gmail.com
  * @time: 2024/7/13 23:21
  * @file: http.go
- * @description: trace http
+ * @description: traceInfo http
  */
 
 // TraceHttp 配置 Trace HTTP 服务器
@@ -21,7 +21,7 @@ func TraceHttp(ctx context.Context, r *gin.Engine, tracerName string) {
 	// 初始化追踪导出器
 	consoleTraceExporter, err := NewTraceExporter()
 	if err != nil {
-		log.Errorf("Failed to get console exporter (trace): %v", err)
+		log.Errorf("Failed to get console exporter (traceInfo): %v", err)
 		return
 	}
 
@@ -57,7 +57,7 @@ func TraceHttp(ctx context.Context, r *gin.Engine, tracerName string) {
 	otel.SetTextMapPropagator(prop)
 
 	// 配置 HTTP 服务器
-	r.GET("/info", func(c *gin.Context) {
-		info(c, tracerName)
+	r.GET("/traceInfo", func(c *gin.Context) {
+		traceInfo(c, tracerName)
 	})
 }
