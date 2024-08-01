@@ -12,7 +12,7 @@ import (
  * @author: gagral.x@gmail.com
  * @time: 2024/7/14 20:47
  * @file: scheduler.go
- * @description:
+ * @description: 任务调度器
  */
 
 type TaskStatus string
@@ -110,6 +110,7 @@ func (s *Scheduler) RemoveTask(id string) {
 func (s *Scheduler) Start() {
 	go func() {
 		for {
+			// 检查是否有任务
 			s.mu.Lock()
 			if s.taskQueue.Len() == 0 {
 				s.mu.Unlock()
@@ -122,6 +123,7 @@ func (s *Scheduler) Start() {
 				}
 			}
 
+			// 获取下一个任务
 			nextTask := heap.Pop(s.taskQueue).(*Task)
 			nextTask.Status = Running
 			s.mu.Unlock()
