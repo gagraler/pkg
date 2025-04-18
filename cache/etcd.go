@@ -2,7 +2,9 @@ package cache
 
 import (
 	"context"
-	"github.com/gagraler/pkg/logger"
+	"fmt"
+
+	"github.com/gagraler/pkg/log"
 	"go.etcd.io/etcd/clientv3"
 )
 
@@ -18,27 +20,25 @@ type Etcd struct {
 	cli       *clientv3.Client
 }
 
-var logs = logger.SugaredLogger()
-
-func NewEtcd(endpoints []string) *Etcd {
+func NewEtcd(endpoints []string) (*Etcd, error) {
 
 	client, err := clientv3.New(clientv3.Config{
 		Endpoints: endpoints,
 	})
 	if err != nil {
-		logs.Errorf("etcd client error: %v", err)
+		return nil, fmt.Errorf("etcd client error: %v", err)
 	}
 
 	defer func(client *clientv3.Client) {
 		err := client.Close()
 		if err != nil {
-			logs.Errorf("etcd client close error: %v", err)
+			return
 		}
 	}(client)
 	return &Etcd{
 		EndPoints: endpoints,
 		cli:       client,
-	}
+	}, nil
 }
 
 // Set key value
@@ -48,25 +48,26 @@ func (e *Etcd) Set(key, value string) error {
 	if err != nil {
 		return err
 	}
-	return nil
+	return err
 }
 
 // HSet key field value
 func (e *Etcd) HSet(key string, fields map[string]string) error {
 
+	var err error
 	for field, value := range fields {
-		_, err := e.cli.Put(context.Background(), key+"/"+field, value)
+		_, err = e.cli.Put(context.Background(), key+"/"+field, value)
 		if err != nil {
 			return err
 		}
 	}
-	return nil
+	return err
 }
 
 func (e *Etcd) grant(ttl int64) clientv3.LeaseID {
 	grant, err := e.cli.Grant(context.Background(), ttl)
 	if err != nil {
-		logs.Errorf("etcd grant error: %v", err)
+		log.Errorf("etcd grant error: %v", err)
 	}
 	return grant.ID
 }
@@ -83,7 +84,7 @@ func (e *Etcd) LessSet(key, value string, ttl int64) error {
 	if err != nil {
 		return err
 	}
-	return nil
+	return err
 }
 
 // LessHSet key field value
@@ -100,7 +101,7 @@ func (e *Etcd) LessHSet(key string, fields map[string]string, ttl int64) error {
 			return err
 		}
 	}
-	return nil
+	return err
 }
 
 // Get key value
@@ -113,7 +114,7 @@ func (e *Etcd) Get(key string) (string, error) {
 	if len(resp.Kvs) == 0 {
 		return "", nil
 	}
-	return string(resp.Kvs[0].Value), nil
+	return string(resp.Kvs[0].Value), err
 }
 
 // HGet key field value
@@ -126,7 +127,7 @@ func (e *Etcd) HGet(key, field string) (string, error) {
 	if len(resp.Kvs) == 0 {
 		return "", nil
 	}
-	return string(resp.Kvs[0].Value), nil
+	return string(resp.Kvs[0].Value), err
 }
 
 // Del key
@@ -136,7 +137,7 @@ func (e *Etcd) Del(key string) error {
 	if err != nil {
 		return err
 	}
-	return nil
+	return err
 }
 
 // Watch key
@@ -145,7 +146,7 @@ func (e *Etcd) Watch(key string) error {
 	rch := e.cli.Watch(context.Background(), key, clientv3.WithPrefix())
 	for wresp := range rch {
 		for _, ev := range wresp.Events {
-			logs.Infof("Type: %s Key:%s Value:%s\n", ev.Type, ev.Kv.Key, ev.Kv.Value)
+			log.Infof("Type: %s Key:%s Value:%s\n", ev.Type, ev.Kv.Key, ev.Kv.Value)
 		}
 	}
 	return nil

@@ -1,27 +1,25 @@
 package crypto
 
 import (
-	"github.com/gagraler/pkg/logger"
+	"fmt"
+
 	"golang.org/x/crypto/bcrypt"
 )
 
-var log = logger.SugaredLogger()
-
-func Encryption(str string) string {
+func Encryption(str string) (string, error) {
 	hash, err := bcrypt.GenerateFromPassword([]byte(str), bcrypt.DefaultCost)
 	if err != nil {
-		log.Error(err.Error())
+		return "", fmt.Errorf("bcrypt.GenerateFromPassword err: %v", err)
 	}
 
-	return string(hash)
+	return string(hash), err
 }
 
-func Compare(ciphertext, password string) bool {
+func Compare(ciphertext, password string) (bool, error) {
 	err := bcrypt.CompareHashAndPassword([]byte(ciphertext), []byte(password))
 	if err != nil {
-		log.Error(err.Error())
-		return false
+		return false, fmt.Errorf("bcrypt.CompareHashAndPassword err: %v", err)
 	}
 
-	return true
+	return true, nil
 }

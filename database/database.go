@@ -2,9 +2,10 @@ package database
 
 import (
 	"fmt"
-	"gorm.io/gorm/logger"
 	"log"
 	"time"
+
+	"gorm.io/gorm/logger"
 
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -51,26 +52,22 @@ func (d *Database) New() *gorm.DB {
 
 	if err != nil {
 		panic(fmt.Errorf("failed to connect to database: %s", err))
-		return nil
 	}
 
 	sqlDB, err := db.DB()
 	if err != nil {
 		panic(fmt.Errorf("failed to connect to database: %s", err))
-		return nil
 	}
 
 	err = sqlDB.Ping()
 	if err != nil {
 		panic(fmt.Errorf("failed to ping database: %s", err))
-		return nil
 	}
 
 	var result int
 	err = sqlDB.QueryRow("SELECT 1").Scan(&result)
 	if err != nil {
 		panic(fmt.Errorf("failed to query database: %s", err))
-		return nil
 	}
 
 	// 设置连接池大小

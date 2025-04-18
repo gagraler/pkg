@@ -2,6 +2,8 @@ package otel
 
 import (
 	"context"
+	"fmt"
+
 	"github.com/gin-gonic/gin"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/sdk/metric"
@@ -16,20 +18,18 @@ import (
  */
 
 // TraceHttp 配置 Trace HTTP 服务器
-func TraceHttp(ctx context.Context, r *gin.Engine, tracerName string) {
+func TraceHttp(ctx context.Context, r *gin.Engine, tracerName string) error {
 
 	// 初始化追踪导出器
 	consoleTraceExporter, err := NewTraceExporter()
 	if err != nil {
-		log.Errorf("Failed to get console exporter (traceInfo): %v", err)
-		return
+		return fmt.Errorf("failed to get console exporter (traceInfo): %v", err)
 	}
 
 	// 初始化指标导出器
 	consoleMetricExporter, err := NewMetricExporter()
 	if err != nil {
-		log.Errorf("Failed to get console exporter (metric): %v", err)
-		return
+		return fmt.Errorf("failed to get console exporter (metric): %v", err)
 	}
 
 	// 设置追踪提供者
@@ -37,7 +37,6 @@ func TraceHttp(ctx context.Context, r *gin.Engine, tracerName string) {
 	defer func(tracerProvider *trace.TracerProvider, ctx context.Context) {
 		err := tracerProvider.Shutdown(ctx)
 		if err != nil {
-			log.Errorf("Failed to shutdown tracer provider: %v", err)
 		}
 	}(tracerProvider, ctx)
 	otel.SetTracerProvider(tracerProvider)
@@ -47,7 +46,6 @@ func TraceHttp(ctx context.Context, r *gin.Engine, tracerName string) {
 	defer func(meterProvider *metric.MeterProvider, ctx context.Context) {
 		err := meterProvider.Shutdown(ctx)
 		if err != nil {
-			log.Errorf("Failed to shutdown meter provider: %v", err)
 		}
 	}(meterProvider, ctx)
 	otel.SetMeterProvider(meterProvider)
@@ -60,4 +58,6 @@ func TraceHttp(ctx context.Context, r *gin.Engine, tracerName string) {
 	r.GET("/traceInfo", func(c *gin.Context) {
 		traceInfo(c, tracerName)
 	})
+
+	return nil
 }

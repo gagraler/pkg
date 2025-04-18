@@ -2,7 +2,6 @@ package otel
 
 import (
 	"encoding/json"
-	"github.com/gagraler/pkg/logger"
 	"github.com/gin-gonic/gin"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/metric"
@@ -25,7 +24,6 @@ type InfoResp struct {
 var (
 	meter       = otel.Meter("")
 	viewCounter metric.Int64Counter
-	log         = logger.SugaredLogger()
 )
 
 func init() {
@@ -34,7 +32,7 @@ func init() {
 		metric.WithDescription("The number of views"),
 		metric.WithUnit("{views}"))
 	if err != nil {
-		log.DPanic(err)
+		panic(err)
 	}
 }
 

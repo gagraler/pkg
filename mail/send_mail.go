@@ -1,7 +1,7 @@
 package mail
 
 import (
-	"github.com/gagraler/pkg/logger"
+	"github.com/gagraler/pkg/log"
 	"gopkg.in/gomail.v2"
 )
 
@@ -13,7 +13,6 @@ import (
  */
 
 var dFlag bool
-var log = logger.SugaredLogger()
 
 type Mail struct {
 	From     string
@@ -61,7 +60,7 @@ func (m *Mail) SendAttachmentMail(filename string) {
 
 	d := gomail.NewDialer(m.Host, m.Port, m.User, m.Password)
 	if err := d.DialAndSend(mail); err != nil {
-		log.DPanicf("send email error: %s", err.Error())
+		log.Errorf("send email error: %s", err.Error())
 	}
 
 	if dFlag {
@@ -78,5 +77,4 @@ func (m *Mail) SendAttachmentMail(filename string) {
 	if dFlag {
 		log.Debug("send email success!")
 	}
-	return
 }

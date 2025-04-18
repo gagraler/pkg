@@ -1,9 +1,10 @@
 package cron
 
 import (
-	"github.com/gagraler/pkg/logger"
-	"github.com/go-co-op/gocron/v2"
+	"fmt"
 	"time"
+
+	"github.com/go-co-op/gocron/v2"
 )
 
 /**
@@ -13,18 +14,15 @@ import (
  * @description: cron
  */
 
-var log = logger.SugaredLogger()
-
 type Cron struct {
 	Expr     string
 	TaskFunc func()
 }
 
-func (c *Cron) New() {
+func (c *Cron) New() error {
 	s, err := gocron.NewScheduler()
 	if err != nil {
-		log.Debugf("cron.NewScheduler err : %v", err)
-		return
+		return fmt.Errorf("cron.NewScheduler err: %v", err)
 	}
 
 	j, err := s.NewJob(
@@ -33,18 +31,17 @@ func (c *Cron) New() {
 			c.TaskFunc,
 		))
 	if err != nil {
-		log.Debugf("NewJob err : %v", err)
-		return
+		return fmt.Errorf("cron.NewJob err: %v", err)
 	}
-	log.Infof("job id: %s, name: %s", j.ID(), j.Name())
+	fmt.Printf("job id: %s, name: %s\n", j.ID(), j.Name())
 
 	s.Start()
-	select {
-	case <-time.After(time.Minute):
-	}
+	time.Sleep(time.Minute)
 
 	err = s.Shutdown()
 	if err != nil {
-		return
+		return err
 	}
+
+	return nil
 }
